@@ -25,7 +25,9 @@ var Effects = Class(function () {
   this.init = function () {
     this._anims = [];
     this._engines = new ViewPool({ ctor: ParticleEngine });
-    GC.app.engine.subscribe('Tick', bind(this, _tick));
+    setTimeout(bind(this, function() {
+      GC.app.engine.subscribe('Tick', bind(this, _tick));
+    }), 0);
   };
 
   var _tick = function (dt) {
@@ -33,6 +35,7 @@ var Effects = Class(function () {
       if (engine._activeParticles.length) {
         !engine.paused && engine.runTick(dt);
       } else {
+        engine.removeFromSuperview();
         this._engines.releaseView(engine);
       }
     }, this);
@@ -66,10 +69,13 @@ var Effects = Class(function () {
 
   var _addParticles = function (view, opts, fn) {
     opts = _applyDefaultOpts(opts);
+    opts.group = arguments.callee.caller.name;
     opts.images = opts.images || defaultImages.get(opts.group);
-    var engine = this._engines.obtainView();
+    var engine = this._engines.obtainView({});
     var vs = view.style;
     var es = engine.style;
+    var parent = view.getSuperview() || GC.app;
+    parent.addSubview(engine);
     es.x = vs.x || 0;
     es.y = vs.y || 0;
     es.width = vs.width || 1;
@@ -138,8 +144,7 @@ var Effects = Class(function () {
     _applyState.call(this, view, group, 'stop');
   };
 
-  this.explode = function (view, opts) {
-    opts.group = 'explode';
+  this.explode = function explode (view, opts) {
     return _addParticles.call(this, view, opts, function (view, opts, engine) {
       var count = 16;
       var data = engine.obtainParticleArray(count);
@@ -147,8 +152,8 @@ var Effects = Class(function () {
       var ttl = opts.duration;
       var stop = -1000 / ttl;
       var vs = view.style;
-      var x = vs.x + (vs.width - size) / 2;
-      var y = vs.y + (vs.height - size) / 2;
+      var x = (vs.width - size) / 2;
+      var y = (vs.height - size) / 2;
       for (var i = 0; i < count; i++) {
         var p = data[i];
         p.polar = true;
@@ -175,14 +180,21 @@ var Effects = Class(function () {
     });
   };
 
-  this.shake = function (view, opts) {
+  this.shake = function shake (view, opts) {
     return _addAnimation.call(this, view, opts, function (view, opts) {
+      var anim = animate(view, 'shake').commit();
+
       var ttl = opts.duration;
       var dt = ttl / 16;
       var m = 1.75 * opts.scale;
-      var x = view.style.x;
-      var y = view.style.y;
-      var s = view.style.scale;
+      var vs = view.style;
+      var x = vs.x;
+      var y = vs.y;
+      var s = vs.scale;
+      var ax = vs.anchorX;
+      var ay = vs.anchorY;
+      vs.anchorX = vs.width / 2;
+      vs.anchorY = vs.height / 2;
       var r1 = TAU * random();
       var r2 = TAU * random();
       var r3 = TAU * random();
@@ -198,8 +210,7 @@ var Effects = Class(function () {
       var r13 = TAU * random();
       var r14 = TAU * random();
 
-      return animate(view, 'shake')
-        .then({ scale: s * (1 + 0.05 * m) }, dt, animate.easeIn)
+      return anim.then({ scale: s * (1 + 0.05 * m) }, dt, animate.easeIn)
         .then({ x: x + 14 * m * cos(r1), y: y + 14 * m * sin(r1), scale: s * (1 + 0.046 * m) }, dt, animate.easeOut)
         .then({ x: x + 13 * m * cos(r2), y: y + 13 * m * sin(r2), scale: s * (1 + 0.042 * m) }, dt, animate.easeInOut)
         .then({ x: x + 12 * m * cos(r3), y: y + 12 * m * sin(r3), scale: s * (1 + 0.038 * m) }, dt, animate.easeInOut)
@@ -214,7 +225,7 @@ var Effects = Class(function () {
         .then({ x: x + 3 * m * cos(r12), y: y + 3 * m * sin(r12), scale: s * (1 + 0.006 * m) }, dt, animate.easeInOut)
         .then({ x: x + 2 * m * cos(r13), y: y + 2 * m * sin(r13), scale: s * (1 + 0.004 * m) }, dt, animate.easeInOut)
         .then({ x: x + 1 * m * cos(r14), y: y + 1 * m * sin(r14), scale: s * (1 + 0.002 * m) }, dt, animate.easeInOut)
-        .then({ x: x, y: y, scale: s }, dt, animate.easeIn);
+        .then({ x: x, y: y, anchorX: ax, anchorY: ay, scale: s }, dt, animate.easeIn);
     });
   };
 
