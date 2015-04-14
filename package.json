@@ -12,7 +12,7 @@
   "devkit": {
     "buildTargets": {},
     "clientPaths": {
-      "entities": "src"
+      "effects": "src"
     },
     "extensions": {
       "build": "plugin/build"
