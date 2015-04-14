@@ -1,0 +1,21 @@
+{
+  "name": "devkit-effects",
+  "author": "Game Closure",
+  "description": "Easy to use effects to amp up any game on devkit!",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gameclosure/devkit-effects.git"
+  },
+  "dependencies": {},
+  "scripts": {},
+  "devkit": {
+    "buildTargets": {},
+    "clientPaths": {
+      "entities": "src"
+    },
+    "extensions": {
+      "build": "plugin/build"
+    }
+  }
+}
