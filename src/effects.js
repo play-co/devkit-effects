@@ -299,12 +299,16 @@ var EffectsParticleEngine = Class(ParticleEngine, function() {
   };
 
   this.stop = this.clear = function () {
-    this.anim.clear();
-    this.killAllParticles();
-    this.removeFromSuperview();
-    this.subject[this._group + 'Engine'] = null;
-    this.subject = null;
-    this._group = "";
+    if (this.subject) {
+      this.anim.clear();
+      this.killAllParticles();
+      this.paused = false;
+      this.follow = false;
+      this.removeFromSuperview();
+      this.subject[this._group + 'Engine'] = null;
+      this.subject = null;
+      this._group = "";
+    }
   };
 
   this.update = function (dt) {
@@ -354,14 +358,18 @@ var EffectsBlendEngine = Class(BlendEngine, function() {
   };
 
   this.stop = this.clear = function () {
-    this.anim.clear();
-    this.killAllParticles();
-    this.style.opacity = 1;
-    this.style.compositeOperation = "";
-    this.removeFromSuperview();
-    this.subject[this._group + 'Engine'] = null;
-    this.subject = null;
-    this._group = "";
+    if (this.subject) {
+      this.anim.clear();
+      this.killAllParticles();
+      this.paused = false;
+      this.follow = false;
+      this.style.opacity = 1;
+      this.style.compositeOperation = "";
+      this.removeFromSuperview();
+      this.subject[this._group + 'Engine'] = null;
+      this.subject = null;
+      this._group = "";
+    }
   };
 
   this.update = function (dt) {
