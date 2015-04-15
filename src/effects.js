@@ -75,36 +75,52 @@ var Effects = Class(function () {
   // wrapper for handling pause, resume, stop API
   var _applyState = function (view, name, state) {
     if (!view) {
-      // apply state to all effects animations globally
+      // apply state to all animation effects globally
       this._animations.forEach(function (anim) {
         anim[state]();
       }, this);
-      // apply state to all effects particles globally
+      // apply state to all particle effects globally
       this._particleEngines.forEachActiveView(function (engine) {
         engine[state]();
       }, this);
+      // apply state to all composite effects globally
+      this._blendEngines.forEachActiveView(function (engine) {
+        engine[state]();
+      }, this);
     } else if (!name) {
-      // apply state to all animations for a specific view
+      // apply state to all animation effects for a specific view
       this._animations.forEach(function (anim) {
         if (anim.subject === view) {
           anim[state]();
         }
       }, this);
-      // apply state to all particles for a specific view
+      // apply state to all particle effects for a specific view
       this._particleEngines.forEachActiveView(function (engine) {
         if (engine.subject === view) {
           engine[state]();
         }
       }, this);
+      // apply state to all composite effects for a specific view
+      this._blendEngines.forEachActiveView(function (engine) {
+        if (engine.subject === view) {
+          engine[state]();
+        }
+      }, this);
     } else {
-      // apply state to all animations for a specific view and specific name
+      // apply state to all animation effects for a specific view and specific effect name
       this._animations.forEach(function (anim) {
         if (anim.subject === view && anim._group === name) {
           anim[state]();
         }
       }, this);
-      // apply state to all particles for a specific view and specific name
+      // apply state to all particle effects for a specific view and specific effect name
       this._particleEngines.forEachActiveView(function (engine) {
+        if (engine.subject === view && engine._group === name) {
+          engine[state]();
+        }
+      }, this);
+      // apply state to all composite effects for a specific view and specific effect name
+      this._blendEngines.forEachActiveView(function (engine) {
         if (engine.subject === view && engine._group === name) {
           engine[state]();
         }
