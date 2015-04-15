@@ -64,6 +64,7 @@ var Effects = Class(function () {
       if (engine._activeParticleObjects.length) {
         !engine.paused && engine.runTick(dt);
       } else {
+        engine.style.compositeOperation = "";
         engine.removeFromSuperview();
         this._blendEngines.releaseView(engine);
       }
@@ -204,10 +205,10 @@ var Effects = Class(function () {
       es.y = vs.y || 0;
       es.width = vs.width || 1;
       es.height = vs.height || 1;
-      es.anchorX = es.width / 2;
-      es.anchorY = es.height / 2;
+      es.anchorX = vs.anchorX;
+      es.anchorY = vs.anchorY;
       es.zIndex = opts.behind ? vs.zIndex - 1 : vs.zIndex + 1;
-      es.scale = opts.scale;
+      es.scale = opts.scale * vs.scale;
 
       // call the particle function with normalized opts
       fn(view, opts, engine);
@@ -227,6 +228,8 @@ var Effects = Class(function () {
       engine.paused = false;
       engine.subject = view;
       engine._group = name;
+      engine._forceCenterX = vs.width / 2 || 0.5;
+      engine._forceCenterY = vs.height / 2 || 0.5;
       parent.addSubview(engine);
 
       // the engine should be positioned and sized to match the subject view
@@ -236,10 +239,10 @@ var Effects = Class(function () {
       es.y = vs.y || 0;
       es.width = vs.width || 1;
       es.height = vs.height || 1;
-      es.anchorX = es.width / 2;
-      es.anchorY = es.height / 2;
+      es.anchorX = vs.anchorX;
+      es.anchorY = vs.anchorY;
       es.zIndex = opts.behind ? vs.zIndex - 1 : vs.zIndex + 1;
-      es.scale = opts.scale;
+      es.scale = opts.scale * vs.scale;
 
       // call the particle function with normalized opts
       fn(view, opts, engine);
@@ -262,20 +265,24 @@ var EffectsParticleEngine = Class(ParticleEngine, function() {
 
   this.init = function (opts) {
     supr.init.call(this, opts);
+    this.anim = animate(this);
     this.paused = false;
     this.subject = null;
     this._group = "";
   };
 
   this.pause = function () {
+    this.anim.pause();
     this.paused = true;
   };
 
   this.resume = function () {
+    this.anim.resume();
     this.paused = false;
   };
 
   this.stop = this.clear = function () {
+    this.anim.clear();
     this.killAllParticles();
     this.subject = null;
     this._group = "";
@@ -295,20 +302,24 @@ var EffectsBlendEngine = Class(BlendEngine, function() {
 
   this.init = function (opts) {
     supr.init.call(this, opts);
+    this.anim = animate(this);
     this.paused = false;
     this.subject = null;
     this._group = "";
   };
 
   this.pause = function () {
+    this.anim.pause();
     this.paused = true;
   };
 
   this.resume = function () {
+    this.anim.resume();
     this.paused = false;
   };
 
   this.stop = this.clear = function () {
+    this.anim.clear();
     this.killAllParticles();
     this.subject = null;
     this._group = "";

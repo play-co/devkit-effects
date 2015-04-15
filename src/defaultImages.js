@@ -21,7 +21,7 @@ var DefaultImages = Class(function () {
 
   this.get = function (group) {
     var available = [];
-    var testURL = '/' + group + '/';
+    var testURL = '/' + group;
 
     for (var i = 0; i < this._projectImages.length; i++) {
       var url = this._projectImages[i];
@@ -40,6 +40,28 @@ var DefaultImages = Class(function () {
     }
 
     return available;
+  };
+
+  this.getImage = function (testURL) {
+    var img = "";
+
+    for (var i = 0; i < this._projectImages.length; i++) {
+      var url = this._projectImages[i];
+      if (url.indexOf(testURL) >= 0) {
+        img = url;
+      }
+    }
+
+    if (!img) {
+      for (var i = 0; i < this._effectsImages.length; i++) {
+        var url = this._effectsImages[i];
+        if (url.indexOf(testURL) >= 0) {
+          img = url;
+        }
+      }
+    }
+
+    return img;
   };
 
 });

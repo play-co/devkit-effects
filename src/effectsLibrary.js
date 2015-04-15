@@ -1,5 +1,7 @@
 import animate;
 
+import .defaultImages;
+
 var PI = Math.PI;
 var TAU = 2 * PI;
 var min = Math.min;
@@ -107,23 +109,114 @@ exports = {
     disco: function (view, opts, engine) {
       var vs = view.style;
       var ttl = opts.duration;
-      var count = max(2, 20 * ~~(ttl / 1000));
+      var stop = -1000 / ttl;
+      var hasImage = !!view.getImage;
+
+      // light count and organization
+      var rows = 7;
+      var cols = rows;
+      var minPerRow = 6;
+      var growthPerRow = 2;
+      var count = 3;
+      for (var r = 0; r < rows; r++) {
+        if (r < rows / 2) {
+          count += minPerRow + r * growthPerRow;
+        } else {
+          count += minPerRow + (rows - 1 - r) * growthPerRow;
+        }
+      }
+
       var data = engine.obtainParticleArray(count);
-      var darker = data[count - 1];
+
+      // fade the engine in and out
+      engine.style.compositeOperation = hasImage ? "" : "lighter";
+      engine.style.opacity = 0;
+      engine.anim.now({ opacity: 1 }, ttl / 4, animate.easeOut)
+        .wait(ttl / 2)
+        .then({ opacity: 0 }, ttl / 4, animate.easeIn);
+
+      // render the base image to canvas
+      if (hasImage) {
+        var base = data[count - 1];
+        base.x = 0;
+        base.y = 0;
+        base.width = vs.width;
+        base.height = vs.height;
+        base.compositeOperation = "source-over";
+        base.ttl = ttl;
+        base.image = view.getImage()._originalURL;
+      }
+
+      // darken the base image, disco in the dark
+      var darker = data[count - 2];
+      darker.x = 0;
+      darker.y = 0;
       darker.width = vs.width;
       darker.height = vs.height;
       darker.compositeOperation = "source-over";
-      darker.opacity = 0.75;
+      darker.opacity = 0.5;
       darker.ttl = ttl;
-      darker.image = opts.images[0];
-      for (var i = count - 2; i >= 0; i--) {
-        var light = data[0];
-        light.width = vs.width / 10;
-        light.height = light.width;
+      darker.image = defaultImages.getImage("disco/darker");
+
+      // shine the lights!
+      var row = 0;
+      var col = 0;
+      var lightsPerRow = minPerRow;
+      var lights = defaultImages.get("disco/light");
+      var size = vs.width / 10;
+      for (var i = count - 3; i > 0; i--) {
+        if (col >= lightsPerRow) {
+          col = 0;
+          row++;
+          if (row < rows / 2) {
+            lightsPerRow += growthPerRow;
+          } else {
+            lightsPerRow -= growthPerRow;
+          }
+        }
+
+        var light = data[i];
+        if (row < rows / 2) {
+          light.x = col * (vs.width / cols) - size / 2;
+          light.y = 2 * row * (vs.height / rows) - col * (vs.height / cols) - size / 2;
+        } else {
+          var newRow = row - ~~(rows / 2);
+          light.x = (2 * newRow - 1) * (vs.width / rows) + col * (vs.width / cols) - size / 2;
+          light.y = vs.height - col * (vs.height / cols) - size / 2;
+        }
+
+        light.x += vs.width / 4;
+        light.y -= vs.height / 4;
+        light.dx = -vs.width;
+        light.dy = vs.height;
+        light.anchorX = size / 2;
+        light.anchorY = size / 2;
+        light.width = size;
+        light.height = size;
+        light.scale = 0;
+        light.dscale = -3 * stop;
+        light.ddscale = 2 * stop * light.dscale;
+        light.opacity = 0.5;
         light.compositeOperation = "lighter";
-        light.ttl = ttl;
-        light.image = choose(opts.images);
+        light.delay = ttl * (row / rows) * (col / cols);
+        light.ttl = ttl - light.delay;
+        light.image = choose(lights);
+
+        col++;
       }
+
+      // clip the disco effect to match the shape
+      if (hasImage) {
+        var clip = data[0];
+        clip.x = 0;
+        clip.y = 0;
+        clip.width = vs.width;
+        clip.height = vs.height;
+        clip.compositeOperation = "destination-atop";
+        clip.ttl = ttl;
+        clip.image = view.getImage()._originalURL;
+      }
+
       engine.emitParticles(data);
     }
   }
