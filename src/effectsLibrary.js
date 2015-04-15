@@ -228,8 +228,8 @@ exports = {
 
         light.x += vs.width / 4;
         light.y -= vs.height / 4;
-        light.dx = -vs.width;
-        light.dy = vs.height;
+        light.dx = -vs.width * -stop;
+        light.dy = vs.height * -stop;
         light.anchorX = size / 2;
         light.anchorY = size / 2;
         light.width = size;
