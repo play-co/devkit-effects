@@ -19,6 +19,17 @@ exports = {
 /* ~ ~ Animation Effects ~ ~ */
 
   animationEffects: {
+    hover: function (view, opts, anim) {
+      var ttl = opts.duration;
+      var dt = ttl / 4;
+      var dy = 6 * opts.scale;
+      var vs = view.style;
+
+      anim.then({ y: vs.y - dy }, dt, animate.easeOut)
+        .then({ y: vs.y }, dt, animate.easeIn)
+        .then({ y: vs.y + dy }, dt, animate.easeOut)
+        .then({ y: vs.y }, dt, animate.easeIn);
+    },
     shake: function (view, opts, anim) {
       var ttl = opts.duration;
       var dt = ttl / 16;
@@ -62,6 +73,36 @@ exports = {
         .then({ x: x + 2 * m * cos(r13), y: y + 2 * m * sin(r13), scale: s * (1 + 0.004 * m) }, dt, animate.easeInOut)
         .then({ x: x + 1 * m * cos(r14), y: y + 1 * m * sin(r14), scale: s * (1 + 0.002 * m) }, dt, animate.easeInOut)
         .then({ x: x, y: y, anchorX: ax, anchorY: ay, scale: s }, dt, animate.easeIn);
+    },
+    spin: function (view, opts, anim) {
+      var ttl = opts.duration;
+      var vs = view.style;
+      var dr = TAU * opts.scale;
+
+      anim.then({ r: vs.r + dr }, ttl, animate.linear);
+    },
+    squish: function (view, opts, anim) {
+      var ttl = opts.duration;
+      var dt = ttl / 4;
+      var vs = view.style;
+      var dsx = vs.scaleX * ((1 + 0.1 * opts.scale) - 1);
+      var dsy = vs.scaleY * ((1 + 0.1 * opts.scale) - 1);
+
+      anim.then({ scaleX: vs.scaleX - dsx, scaleY: vs.scaleY + dsy }, dt, animate.easeOut)
+        .then({ scaleX: vs.scaleX, scaleY: vs.scaleY }, dt, animate.easeIn)
+        .then({ scaleX: vs.scaleX + dsx, scaleY: vs.scaleY - dsy }, dt, animate.easeOut)
+        .then({ scaleX: vs.scaleX, scaleY: vs.scaleY }, dt, animate.easeIn);
+    },
+    sway: function (view, opts, anim) {
+      var ttl = opts.duration;
+      var dt = ttl / 4;
+      var dx = 6 * opts.scale;
+      var vs = view.style;
+
+      anim.then({ x: vs.x - dx }, dt, animate.easeOut)
+        .then({ x: vs.x }, dt, animate.easeIn)
+        .then({ x: vs.x + dx }, dt, animate.easeOut)
+        .then({ x: vs.x }, dt, animate.easeIn);
     }
   },
 
