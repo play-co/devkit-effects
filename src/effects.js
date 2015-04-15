@@ -1,46 +1,65 @@
 import animate;
 import ui.ViewPool as ViewPool;
 import ui.ParticleEngine as ParticleEngine;
+import ui.BlendEngine as BlendEngine;
 
 import .defaultImages;
+import .effectsLibrary;
 
-var PI = Math.PI;
-var TAU = 2 * PI;
-var sin = Math.sin;
-var cos = Math.cos;
-var floor = Math.floor;
-var random = Math.random;
-var choose = function (a) { return a[floor(random() * a.length)]; };
-var rollFloat = function (n, x) { return n + random() * (x - n); };
-var rollInt = function (n, x) { return floor(n + random() * (1 + x - n)); };
 
-/*
-    Effects Class
-*/
+
+/**
+  *  Effects Manager Class
+  *  ~ individual effects are added automatically from effectsLibrary
+  *  ~ effects can also be added manually via register functions
+  */
 
 var Effects = Class(function () {
 
 /* ~ ~ Private API ~ ~ */
 
   this.init = function () {
-    this._anims = [];
-    this._engines = new ViewPool({ ctor: ParticleEngine });
+    this._animations = [];
+    this._particleEngines = new ViewPool({ ctor: EffectsParticleEngine });
+    this._blendEngines = new ViewPool({ ctor: EffectsBlendEngine });
+
+    // register the default animation effects
+    var anims = effectsLibrary.animationEffects;
+    for (var name in anims) {
+      this.registerAnimationEffect(name, anims[name]);
+    }
+
+    // register the default particle effects
+    var particles = effectsLibrary.particleEffects;
+    for (var name in particles) {
+      this.registerParticleEffect(name, particles[name]);
+    }
+
+    // register the default composite effects
+    var composites = effectsLibrary.compositeEffects;
+    for (var name in composites) {
+      this.registerCompositeEffect(name, composites[name]);
+    }
+
+    // subscribe to the devkit's tick once it's finished initializing
     setTimeout(bind(this, function() {
       GC.app.engine.subscribe('Tick', bind(this, _tick));
     }), 0);
   };
 
+  // updates particle and blend engines and removes finished engines
   var _tick = function (dt) {
-    this._engines.forEachActiveView(function (engine) {
+    this._particleEngines.forEachActiveView(function (engine) {
       if (engine._activeParticles.length) {
         !engine.paused && engine.runTick(dt);
       } else {
         engine.removeFromSuperview();
-        this._engines.releaseView(engine);
+        this._particleEngines.releaseView(engine);
       }
     }, this);
   };
 
+  // normalizes opts passed in to effects with reasonable defaults
   var _applyDefaultOpts = function (opts) {
     opts = opts || {};
     opts.delay = opts.delay || 0;
@@ -53,77 +72,40 @@ var Effects = Class(function () {
     return opts;
   };
 
-  var _addAnimation = function (view, opts, fn) {
-    opts = _applyDefaultOpts(opts);
-    var anim = fn(view, opts);
-    anim.stop = anim.clear;
-    anim.then(bind(this, function () {
-      this._anims.splice(this._anims.indexOf(anim), 1);
-      if (opts.loop) {
-        _addAnimation.call(this, view, opts, fn);
-      }
-    }));
-    this._anims.push(anim);
-    return anim;
-  };
-
-  var _addParticles = function (view, opts, fn) {
-    opts = _applyDefaultOpts(opts);
-    opts.group = arguments.callee.caller.name;
-    opts.images = opts.images || defaultImages.get(opts.group);
-    var engine = this._engines.obtainView({});
-    var vs = view.style;
-    var es = engine.style;
-    var parent = view.getSuperview() || GC.app;
-    parent.addSubview(engine);
-    es.x = vs.x || 0;
-    es.y = vs.y || 0;
-    es.width = vs.width || 1;
-    es.height = vs.height || 1;
-    es.anchorX = es.width / 2;
-    es.anchorY = es.height / 2;
-    es.zIndex = opts.behind ? vs.zIndex - 1 : vs.zIndex + 1;
-    es.scale = opts.scale;
-    engine.paused = false;
-    engine.subject = view;
-    engine._group = opts.group;
-    fn(view, opts, engine);
-    return engine;
-  };
-
-  var _applyState = function (view, group, state) {
+  // wrapper for handling pause, resume, stop API
+  var _applyState = function (view, name, state) {
     if (!view) {
       // apply state to all effects animations globally
-      this._anims.forEach(function (anim) {
+      this._animations.forEach(function (anim) {
         anim[state]();
       }, this);
       // apply state to all effects particles globally
-      this._engines.forEachActiveView(function (engine) {
+      this._particleEngines.forEachActiveView(function (engine) {
         engine[state]();
       }, this);
-    } else if (!group) {
+    } else if (!name) {
       // apply state to all animations for a specific view
-      this._anims.forEach(function (anim) {
+      this._animations.forEach(function (anim) {
         if (anim.subject === view) {
           anim[state]();
         }
       }, this);
       // apply state to all particles for a specific view
-      this._engines.forEachActiveView(function (engine) {
+      this._particleEngines.forEachActiveView(function (engine) {
         if (engine.subject === view) {
           engine[state]();
         }
       }, this);
     } else {
-      // apply state to all animations for a specific view and specific group
-      this._anims.forEach(function (anim) {
-        if (anim.subject === view && anim._group === group) {
+      // apply state to all animations for a specific view and specific name
+      this._animations.forEach(function (anim) {
+        if (anim.subject === view && anim._group === name) {
           anim[state]();
         }
       }, this);
-      // apply state to all particles for a specific view and specific group
-      this._engines.forEachActiveView(function (engine) {
-        if (engine.subject === view && engine._group === group) {
+      // apply state to all particles for a specific view and specific name
+      this._particleEngines.forEachActiveView(function (engine) {
+        if (engine.subject === view && engine._group === name) {
           engine[state]();
         }
       }, this);
@@ -132,109 +114,121 @@ var Effects = Class(function () {
 
 /* ~ ~ Public API ~ ~ */
 
-  this.pause = function (view, group) {
-    _applyState.call(this, view, group, 'pause');
+  // pause all, a group, or a single effect
+  this.pause = function (view, name) {
+    _applyState.call(this, view, name, 'pause');
   };
 
-  this.resume = function (view, group) {
-    _applyState.call(this, view, group, 'resume');
+  // resume all, a group, or a single effect
+  this.resume = function (view, name) {
+    _applyState.call(this, view, name, 'resume');
   };
 
-  this.stop = function (view, group) {
-    _applyState.call(this, view, group, 'stop');
+  // stop all, a group, or a single effect
+  this.stop = function (view, name) {
+    _applyState.call(this, view, name, 'stop');
   };
 
-  this.explode = function explode (view, opts) {
-    return _addParticles.call(this, view, opts, function (view, opts, engine) {
-      var count = 16;
-      var data = engine.obtainParticleArray(count);
-      var size = 50;
-      var ttl = opts.duration;
-      var stop = -1000 / ttl;
-      var vs = view.style;
-      var x = (vs.width - size) / 2;
-      var y = (vs.height - size) / 2;
-      for (var i = 0; i < count; i++) {
-        var p = data[i];
-        p.polar = true;
-        p.ox = x + rollFloat(-5, 5);
-        p.oy = y + rollFloat(-5, 5);
-        p.radius = rollFloat(-5, 5);
-        p.dradius = rollFloat(0, 400);
-        p.ddradius = stop * p.dradius;
-        p.theta = TAU * random();
-        p.r = TAU * random();
-        p.dr = rollFloat(-4, 4);
-        p.ddr = stop * p.dr;
-        p.anchorX = size / 2;
-        p.anchorY = size / 2;
-        p.width = size;
-        p.height = size;
-        p.scale = rollFloat(0.25, 2.5);
-        p.dscale = stop * p.scale;
-        p.ttl = ttl;
-        p.image = choose(opts.images);
-        p.compositeOperation = opts.blend ? "lighter" : "";
-      }
-      engine.emitParticles(data);
+  // register a new animation effect
+  this.registerAnimationEffect = function (name, fn) {
+    this[name] = bind(this, function (view, opts) {
+      // prep animations and ensure safe completion if already active
+      var anim = animate(view, name);
+      anim.stop = anim.clear;
+      anim.interrupting = true;
+      anim.commit();
+      anim.interrupting = false;
+      this._animations.push(anim);
+
+      // call the animation function with normalized opts
+      opts = _applyDefaultOpts(opts);
+      fn(view, opts, anim);
+
+      // remove the anim ref and loop the animation if specified
+      anim.then(bind(this, function () {
+        this._animations.splice(this._animations.indexOf(anim), 1);
+        if (opts.loop && !anim.interrupting) {
+          anim.clear();
+          this[name](view, opts);
+        }
+      }));
+
+      return anim;
     });
   };
 
-  this.shake = function shake (view, opts) {
-    return _addAnimation.call(this, view, opts, function (view, opts) {
-      var anim = animate(view, 'shake').commit();
-
-      var ttl = opts.duration;
-      var dt = ttl / 16;
-      var m = 1.75 * opts.scale;
+  // register a new particle effect
+  this.registerParticleEffect = function (name, fn) {
+    this[name] = bind(this, function (view, opts) {
+      // prep engine and add as a sibling view to the subject view
+      var engine = this._particleEngines.obtainView({});
+      var parent = view.getSuperview() || GC.app;
       var vs = view.style;
-      var x = vs.x;
-      var y = vs.y;
-      var s = vs.scale;
-      var ax = vs.anchorX;
-      var ay = vs.anchorY;
-      vs.anchorX = vs.width / 2;
-      vs.anchorY = vs.height / 2;
-      var r1 = TAU * random();
-      var r2 = TAU * random();
-      var r3 = TAU * random();
-      var r4 = TAU * random();
-      var r5 = TAU * random();
-      var r6 = TAU * random();
-      var r7 = TAU * random();
-      var r8 = TAU * random();
-      var r9 = TAU * random();
-      var r10 = TAU * random();
-      var r11 = TAU * random();
-      var r12 = TAU * random();
-      var r13 = TAU * random();
-      var r14 = TAU * random();
+      var es = engine.style;
+      engine.paused = false;
+      engine.subject = view;
+      engine._group = name;
+      parent.addSubview(engine);
 
-      return anim.then({ scale: s * (1 + 0.05 * m) }, dt, animate.easeIn)
-        .then({ x: x + 14 * m * cos(r1), y: y + 14 * m * sin(r1), scale: s * (1 + 0.046 * m) }, dt, animate.easeOut)
-        .then({ x: x + 13 * m * cos(r2), y: y + 13 * m * sin(r2), scale: s * (1 + 0.042 * m) }, dt, animate.easeInOut)
-        .then({ x: x + 12 * m * cos(r3), y: y + 12 * m * sin(r3), scale: s * (1 + 0.038 * m) }, dt, animate.easeInOut)
-        .then({ x: x + 11 * m * cos(r4), y: y + 11 * m * sin(r4), scale: s * (1 + 0.034 * m) }, dt, animate.easeInOut)
-        .then({ x: x + 10 * m * cos(r5), y: y + 10 * m * sin(r5), scale: s * (1 + 0.030 * m) }, dt, animate.easeInOut)
-        .then({ x: x + 9 * m * cos(r6), y: y + 9 * m * sin(r6), scale: s * (1 + 0.026 * m) }, dt, animate.easeInOut)
-        .then({ x: x + 8 * m * cos(r7), y: y + 8 * m * sin(r7), scale: s * (1 + 0.022 * m) }, dt, animate.easeInOut)
-        .then({ x: x + 7 * m * cos(r8), y: y + 7 * m * sin(r8), scale: s * (1 + 0.018 * m) }, dt, animate.easeInOut)
-        .then({ x: x + 6 * m * cos(r9), y: y + 6 * m * sin(r9), scale: s * (1 + 0.014 * m) }, dt, animate.easeInOut)
-        .then({ x: x + 5 * m * cos(r10), y: y + 5 * m * sin(r10), scale: s * (1 + 0.010 * m) }, dt, animate.easeInOut)
-        .then({ x: x + 4 * m * cos(r11), y: y + 4 * m * sin(r11), scale: s * (1 + 0.008 * m) }, dt, animate.easeInOut)
-        .then({ x: x + 3 * m * cos(r12), y: y + 3 * m * sin(r12), scale: s * (1 + 0.006 * m) }, dt, animate.easeInOut)
-        .then({ x: x + 2 * m * cos(r13), y: y + 2 * m * sin(r13), scale: s * (1 + 0.004 * m) }, dt, animate.easeInOut)
-        .then({ x: x + 1 * m * cos(r14), y: y + 1 * m * sin(r14), scale: s * (1 + 0.002 * m) }, dt, animate.easeInOut)
-        .then({ x: x, y: y, anchorX: ax, anchorY: ay, scale: s }, dt, animate.easeIn);
+      // the engine should be positioned and sized to match the subject view
+      opts = _applyDefaultOpts(opts);
+      opts.images = opts.images || defaultImages.get(name);
+      es.x = vs.x || 0;
+      es.y = vs.y || 0;
+      es.width = vs.width || 1;
+      es.height = vs.height || 1;
+      es.anchorX = es.width / 2;
+      es.anchorY = es.height / 2;
+      es.zIndex = opts.behind ? vs.zIndex - 1 : vs.zIndex + 1;
+      es.scale = opts.scale;
+
+      // call the particle function with normalized opts
+      fn(view, opts, engine);
+
+      return engine;
+    });
+  };
+
+  // register a new composite (blending) effect
+  this.registerCompositeEffect = function (name, fn) {
+    this[name] = bind(this, function (view, opts) {
+      // prep blend engine and add as a sibling view to the subject view
+      var engine = this._blendEngines.obtainView({});
+      var parent = view.getSuperview() || GC.app;
+      var vs = view.style;
+      var es = engine.style;
+      engine.paused = false;
+      engine.subject = view;
+      engine._group = name;
+      parent.addSubview(engine);
+
+      // the engine should be positioned and sized to match the subject view
+      opts = _applyDefaultOpts(opts);
+      opts.images = opts.images || defaultImages.get(name);
+      es.x = vs.x || 0;
+      es.y = vs.y || 0;
+      es.width = vs.width || 1;
+      es.height = vs.height || 1;
+      es.anchorX = es.width / 2;
+      es.anchorY = es.height / 2;
+      es.zIndex = opts.behind ? vs.zIndex - 1 : vs.zIndex + 1;
+      es.scale = opts.scale;
+
+      // call the particle function with normalized opts
+      fn(view, opts, engine);
+
+      return engine;
     });
   };
 
 });
 
-/*
-    EffectsParticleEngine
-    ~ wraps ParticleEngine to mimic animate's Animator API
-*/
+
+
+/**
+  *  EffectsParticleEngine
+  *  ~ wraps ParticleEngine to mimic animate's Animator API
+  */
 
 var EffectsParticleEngine = Class(ParticleEngine, function() {
   var supr = ParticleEngine.prototype;
@@ -262,4 +256,40 @@ var EffectsParticleEngine = Class(ParticleEngine, function() {
 
 });
 
+
+
+/**
+  *  EffectsBlendEngine
+  *  ~ wraps BlendEngine to mimic animate's Animator API
+  */
+
+var EffectsBlendEngine = Class(BlendEngine, function() {
+  var supr = BlendEngine.prototype;
+
+  this.init = function (opts) {
+    supr.init.call(this, opts);
+    this.paused = false;
+    this.subject = null;
+    this._group = "";
+  };
+
+  this.pause = function () {
+    this.paused = true;
+  };
+
+  this.resume = function () {
+    this.paused = false;
+  };
+
+  this.stop = this.clear = function () {
+    this.killAllParticles();
+    this.subject = null;
+    this._group = "";
+  };
+
+});
+
+
+
+// this class is a singleton instantiated on import
 exports = new Effects();
