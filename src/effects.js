@@ -47,14 +47,19 @@ var Effects = Class(function () {
     }), 0);
   };
 
+  var loopDefaults = effectsLibrary.getDefaults('loop');
+  var blendDefaults = effectsLibrary.getDefaults('blend');
+  var followDefaults = effectsLibrary.getDefaults('follow');
+  var behindDefaults = effectsLibrary.getDefaults('behind');
+
   // updates particle and blend engines and removes finished engines
   var _tick = function (dt) {
     // update particle engines
     this._particleEngines.forEachActiveView(function (engine) {
       if (engine._activeParticles.length) {
-        !engine.paused && engine.runTick(dt);
+        engine.update(dt);
       } else {
-        engine.removeFromSuperview();
+        engine.stop();
         this._particleEngines.releaseView(engine);
       }
     }, this);
@@ -62,25 +67,24 @@ var Effects = Class(function () {
     // update blend engines
     this._blendEngines.forEachActiveView(function (engine) {
       if (engine._activeParticleObjects.length) {
-        !engine.paused && engine.runTick(dt);
+        engine.update(dt);
       } else {
-        engine.style.compositeOperation = "";
-        engine.removeFromSuperview();
+        engine.stop();
         this._blendEngines.releaseView(engine);
       }
     }, this);
   };
 
   // normalizes opts passed in to effects with reasonable defaults
-  var _applyDefaultOpts = function (opts) {
+  var _applyDefaultOpts = function (name, opts) {
     opts = opts || {};
     opts.delay = opts.delay || 0;
     opts.duration = opts.duration || 1000;
     opts.scale = opts.scale || 1;
-    opts.loop = opts.loop || false;
-    opts.blend = opts.blend || false;
-    opts.follow = opts.follow || false;
-    opts.behind = opts.behind || false;
+    opts.loop = opts.loop !== void 0 ? opts.loop : loopDefaults[name];
+    opts.blend = opts.blend !== void 0 ? opts.blend : blendDefaults[name];
+    opts.follow = opts.follow !== void 0 ? opts.follow : followDefaults[name];
+    opts.behind = opts.behind !== void 0 ? opts.behind : behindDefaults[name];
     return opts;
   };
 
@@ -169,7 +173,7 @@ var Effects = Class(function () {
       this._animations.push(anim);
 
       // call the animation function with normalized opts
-      opts = _applyDefaultOpts(opts);
+      opts = _applyDefaultOpts(name, opts);
       fn(view, opts, anim);
 
       // remove the anim ref and loop the animation if specified
@@ -189,17 +193,18 @@ var Effects = Class(function () {
   this.registerParticleEffect = function (name, fn) {
     this[name] = bind(this, function (view, opts) {
       // prep engine and add as a sibling view to the subject view
+      opts = _applyDefaultOpts(name, opts);
       var engine = this._particleEngines.obtainView({});
       var parent = view.getSuperview() || GC.app;
       var vs = view.style;
       var es = engine.style;
-      engine.paused = false;
-      engine.subject = view;
       engine._group = name;
+      engine.subject = view;
+      engine.paused = false;
+      engine.follow = opts.follow;
       parent.addSubview(engine);
 
       // the engine should be positioned and sized to match the subject view
-      opts = _applyDefaultOpts(opts);
       opts.images = opts.images || defaultImages.get(name);
       es.x = vs.x || 0;
       es.y = vs.y || 0;
@@ -212,8 +217,13 @@ var Effects = Class(function () {
 
       // call the particle function with normalized opts
       fn(view, opts, engine);
-
-      return engine;
+      if (engine._activeParticles.length) {
+        view[name + 'Engine'] = engine;
+        return engine;
+      } else {
+        this._particleEngines.releaseView(engine);
+        return null;
+      }
     });
   };
 
@@ -221,19 +231,20 @@ var Effects = Class(function () {
   this.registerCompositeEffect = function (name, fn) {
     this[name] = bind(this, function (view, opts) {
       // prep blend engine and add as a sibling view to the subject view
+      opts = _applyDefaultOpts(name, opts);
       var engine = this._blendEngines.obtainView({});
       var parent = view.getSuperview() || GC.app;
       var vs = view.style;
       var es = engine.style;
-      engine.paused = false;
-      engine.subject = view;
       engine._group = name;
+      engine.subject = view;
+      engine.paused = false;
+      engine.follow = opts.follow;
       engine._forceCenterX = vs.width / 2 || 0.5;
       engine._forceCenterY = vs.height / 2 || 0.5;
       parent.addSubview(engine);
 
       // the engine should be positioned and sized to match the subject view
-      opts = _applyDefaultOpts(opts);
       opts.images = opts.images || defaultImages.get(name);
       es.x = vs.x || 0;
       es.y = vs.y || 0;
@@ -246,8 +257,13 @@ var Effects = Class(function () {
 
       // call the particle function with normalized opts
       fn(view, opts, engine);
-
-      return engine;
+      if (engine._activeParticleObjects.length) {
+        view[name + 'Engine'] = engine;
+        return engine;
+      } else {
+        this._blendEngines.releaseView(engine);
+        return null;
+      }
     });
   };
 
@@ -267,6 +283,7 @@ var EffectsParticleEngine = Class(ParticleEngine, function() {
     supr.init.call(this, opts);
     this.anim = animate(this);
     this.paused = false;
+    this.follow = false;
     this.subject = null;
     this._group = "";
   };
@@ -284,8 +301,25 @@ var EffectsParticleEngine = Class(ParticleEngine, function() {
   this.stop = this.clear = function () {
     this.anim.clear();
     this.killAllParticles();
+    this.removeFromSuperview();
+    this.subject[this._group + 'Engine'] = null;
     this.subject = null;
     this._group = "";
+  };
+
+  this.update = function (dt) {
+    !this.paused && this.runTick(dt);
+
+    if (this.follow) {
+      this.style.x = this.subject.style.x;
+      this.style.y = this.subject.style.y;
+      this.style.visible = this.subject.style.visible;
+
+      var parent = this.subject.getSuperview();
+      if (this.getSuperview() !== parent) {
+        parent.addSubview(this);
+      }
+    }
   };
 
 });
@@ -304,6 +338,7 @@ var EffectsBlendEngine = Class(BlendEngine, function() {
     supr.init.call(this, opts);
     this.anim = animate(this);
     this.paused = false;
+    this.follow = false;
     this.subject = null;
     this._group = "";
   };
@@ -321,8 +356,27 @@ var EffectsBlendEngine = Class(BlendEngine, function() {
   this.stop = this.clear = function () {
     this.anim.clear();
     this.killAllParticles();
+    this.style.opacity = 1;
+    this.style.compositeOperation = "";
+    this.removeFromSuperview();
+    this.subject[this._group + 'Engine'] = null;
     this.subject = null;
     this._group = "";
+  };
+
+  this.update = function (dt) {
+    !this.paused && this.runTick(dt);
+
+    if (this.follow) {
+      this.style.x = this.subject.style.x;
+      this.style.y = this.subject.style.y;
+      this.style.visible = this.subject.style.visible;
+
+      var parent = this.subject.getSuperview();
+      if (this.getSuperview() !== parent) {
+        parent.addSubview(this);
+      }
+    }
   };
 
 });

@@ -8,11 +8,30 @@ var min = Math.min;
 var max = Math.max;
 var sin = Math.sin;
 var cos = Math.cos;
+var pow = Math.pow;
 var floor = Math.floor;
 var random = Math.random;
 var choose = function (a) { return a[floor(random() * a.length)]; };
 var rollFloat = function (n, x) { return n + random() * (x - n); };
 var rollInt = function (n, x) { return floor(n + random() * (1 + x - n)); };
+
+var DEFAULT_OPTS = {
+  loop: {
+    'hover': true,
+    'sway': true,
+    'spin': true,
+    'squish': true
+  },
+  blend: {
+    'explode': true
+  },
+  follow: {
+    'radial': true
+  },
+  behind: {
+    'radial': true
+  }
+};
 
 exports = {
 
@@ -148,6 +167,9 @@ exports = {
 
   compositeEffects: {
     disco: function (view, opts, engine) {
+      // unique effect per view
+      if (view.discoEngine) { return; }
+
       var vs = view.style;
       var ttl = opts.duration;
       var stop = -1000 / ttl;
@@ -259,6 +281,38 @@ exports = {
       }
 
       engine.emitParticles(data);
+    },
+    radial: function (view, opts, engine) {
+      // unique effect per view
+      if (view.radialEngine) { return; }
+
+      var vs = view.style;
+      var count = opts.images.length;
+      var width = vs.width;
+      var height = width;
+      var data = engine.obtainParticleArray(count);
+      for (var i = 0; i < count; i++) {
+        var p = data[i];
+        p.image = opts.images[i];
+        p.x = (vs.width - width) / 2;
+        p.y = (vs.height - height) / 2;
+        p.r = TAU * random();
+        p.dr = 0.32 * pow(0.67, i);
+        p.anchorX = width / 2;
+        p.anchorY = height / 2;
+        p.width = width;
+        p.height = height;
+        p.scale = 4 * opts.scale;
+        p.ttl = Infinity;
+        p.compositeOperation = 'lighter';
+      }
+      engine.emitParticles(data);
     }
+  },
+
+/* ~ ~ Helper Functions ~ ~ */
+
+  getDefaults: function (optName) {
+    return DEFAULT_OPTS[optName];
   }
 };
