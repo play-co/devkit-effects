@@ -2,6 +2,8 @@ import animate;
 
 var PI = Math.PI;
 var TAU = 2 * PI;
+var min = Math.min;
+var max = Math.max;
 var sin = Math.sin;
 var cos = Math.cos;
 var floor = Math.floor;
@@ -102,6 +104,27 @@ exports = {
 /* ~ ~ Composite Effects ~ ~ */
 
   compositeEffects: {
-
+    disco: function (view, opts, engine) {
+      var vs = view.style;
+      var ttl = opts.duration;
+      var count = max(2, 20 * ~~(ttl / 1000));
+      var data = engine.obtainParticleArray(count);
+      var darker = data[count - 1];
+      darker.width = vs.width;
+      darker.height = vs.height;
+      darker.compositeOperation = "source-over";
+      darker.opacity = 0.75;
+      darker.ttl = ttl;
+      darker.image = opts.images[0];
+      for (var i = count - 2; i >= 0; i--) {
+        var light = data[0];
+        light.width = vs.width / 10;
+        light.height = light.width;
+        light.compositeOperation = "lighter";
+        light.ttl = ttl;
+        light.image = choose(opts.images);
+      }
+      engine.emitParticles(data);
+    }
   }
 };
