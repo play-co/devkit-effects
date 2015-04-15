@@ -49,12 +49,23 @@ var Effects = Class(function () {
 
   // updates particle and blend engines and removes finished engines
   var _tick = function (dt) {
+    // update particle engines
     this._particleEngines.forEachActiveView(function (engine) {
       if (engine._activeParticles.length) {
         !engine.paused && engine.runTick(dt);
       } else {
         engine.removeFromSuperview();
         this._particleEngines.releaseView(engine);
+      }
+    }, this);
+
+    // update blend engines
+    this._blendEngines.forEachActiveView(function (engine) {
+      if (engine._activeParticleObjects.length) {
+        !engine.paused && engine.runTick(dt);
+      } else {
+        engine.removeFromSuperview();
+        this._blendEngines.releaseView(engine);
       }
     }, this);
   };
