@@ -34,7 +34,8 @@ The following functions can be called on effects to help manage active effects:
 
  * `effects.pause()` - optional parameters `view` and effect `name` - pauses all effects globally, all effects on a given view, or a specific effect on a specific view
  * `effects.resume()` - optional parameters `view` and effect `name` - resumes all effects globally, all effects on a given view, or a specific effect on a specific view
- * `effects.stop()` - optional parameters `view` and effect `name` - stops all effects globally, all effects on a given view, or a specific effect on a specific view
+ * `effects.stop()` - optional parameters `view` and effect `name` - clears all effects globally, all effects on a given view, or a specific effect on a specific view
+ * `effects.commit()` - optional parameters `view` and effect `name` - instantly and safely finishes all effects globally, all effects on a given view, or a specific effect on a specific view
 
 For example, pause all effects, but resume only one of them:
 ```
