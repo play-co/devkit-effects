@@ -17,7 +17,8 @@ var rollInt = function (n, x) { return floor(n + random() * (1 + x - n)); };
 
 var DEFAULT_OPTS = {
   duration: {
-    'disco': 2500
+    'disco': 2500,
+    'sparkle': 2000
   },
   loop: {
     'hover': true,
@@ -28,7 +29,8 @@ var DEFAULT_OPTS = {
     'sparkle': true
   },
   blend: {
-    'explode': true
+    'explode': true,
+    'sparkle': true
   },
   follow: {
     'radial': true,
@@ -163,6 +165,41 @@ exports = {
         p.dscale = stop * p.scale;
         p.ttl = ttl;
         p.image = choose(opts.images);
+        p.compositeOperation = opts.blend ? "lighter" : "";
+      }
+      engine.emitParticles(data);
+    },
+    sparkle: function (view, opts, engine) {
+      // unique effect per view
+      if (view.sparkleEngine) { return; }
+
+      var vs = view.style;
+      var count = rollInt(1, 2);
+      var data = engine.obtainParticleArray(count);
+      for (var i = 0; i < count; i++) {
+        var p = data[i];
+        var x = vs.width * rollFloat(0.25, 0.75);
+        var y = vs.height * rollFloat(0.25, 0.75);
+        var width = rollInt(25, 100);
+        var height = width;
+        var ttl = opts.duration;
+        var stop = -1000 / ttl;
+        p.image = choose(opts.images);
+        p.x = x - width / 2;
+        p.y = y - height / 2;
+        p.r = rollFloat(0, TAU);
+        p.dr = rollFloat(-16, 16);
+        p.ddr = stop * p.dr;
+        p.anchorX = width / 2;
+        p.anchorY = height / 2;
+        p.width = width;
+        p.height = height;
+        p.scale = 0;
+        p.dscale = 4 * -stop;
+        p.ddscale = 3 * stop * p.dscale;
+        p.delay = i * 0.25 * ttl;
+        p.ttl = ttl - p.delay;
+        p.opacity = opts.blend ? 0.85 : 1;
         p.compositeOperation = opts.blend ? "lighter" : "";
       }
       engine.emitParticles(data);
