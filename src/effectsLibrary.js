@@ -21,15 +21,18 @@ var DEFAULT_OPTS = {
   },
   loop: {
     'hover': true,
-    'sway': true,
     'spin': true,
-    'squish': true
+    'squish': true,
+    'sway': true,
+    'disco': true,
+    'sparkle': true
   },
   blend: {
     'explode': true
   },
   follow: {
-    'radial': true
+    'radial': true,
+    'sparkle': true
   },
   behind: {
     'radial': true
