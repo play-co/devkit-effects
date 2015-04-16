@@ -165,6 +165,9 @@ var Effects = Class(function () {
   // register a new animation effect
   this.registerAnimationEffect = function (name, fn) {
     this[name] = bind(this, function (view, opts) {
+      // allow entities and other objects that have views
+      view = view.view || view;
+
       // prep animations and ensure safe completion if already active
       var anim = animate(view, name);
       anim.stop = anim.clear;
@@ -193,6 +196,9 @@ var Effects = Class(function () {
   // register a new particle effect
   this.registerParticleEffect = function (name, fn) {
     this[name] = bind(this, function (view, opts) {
+      // allow entities and other objects that have views
+      view = view.view || view;
+
       // prep engine and add as a sibling view to the subject view
       opts = _applyDefaultOpts(name, opts);
       var engine = this._particleEngines.obtainView({});
@@ -242,6 +248,9 @@ var Effects = Class(function () {
   // register a new composite (blending) effect
   this.registerCompositeEffect = function (name, fn) {
     this[name] = bind(this, function (view, opts) {
+      // allow entities and other objects that have views
+      view = view.view || view;
+
       // prep blend engine and add as a sibling view to the subject view
       opts = _applyDefaultOpts(name, opts);
       var engine = this._blendEngines.obtainView({});

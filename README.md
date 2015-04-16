@@ -70,7 +70,6 @@ These properties can be passed in to modify effects:
  * `disco` - disco-mode, default images
  * `radial` - awe-inspiring radials, default images
 
-
 ### Registering Custom Effects
 
 Although this is possible using exposed API's, it's recommended to avoid until better tested and documented! Read the code in `effects.js` if you're super curious!
