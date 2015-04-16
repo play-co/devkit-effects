@@ -16,6 +16,9 @@ var rollFloat = function (n, x) { return n + random() * (x - n); };
 var rollInt = function (n, x) { return floor(n + random() * (1 + x - n)); };
 
 var DEFAULT_OPTS = {
+  duration: {
+    'disco': 2500
+  },
   loop: {
     'hover': true,
     'sway': true,

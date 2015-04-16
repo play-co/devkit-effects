@@ -47,6 +47,7 @@ var Effects = Class(function () {
     }), 0);
   };
 
+  var durationDefaults = effectsLibrary.getDefaults('duration');
   var loopDefaults = effectsLibrary.getDefaults('loop');
   var blendDefaults = effectsLibrary.getDefaults('blend');
   var followDefaults = effectsLibrary.getDefaults('follow');
@@ -79,7 +80,7 @@ var Effects = Class(function () {
   var _applyDefaultOpts = function (name, opts) {
     opts = opts || {};
     opts.delay = opts.delay || 0;
-    opts.duration = opts.duration || 1000;
+    opts.duration = opts.duration !== void 0 ? opts.duration : durationDefaults[name] || 1000;
     opts.scale = opts.scale || 1;
     opts.loop = opts.loop !== void 0 ? opts.loop : loopDefaults[name];
     opts.blend = opts.blend !== void 0 ? opts.blend : blendDefaults[name];
@@ -174,7 +175,7 @@ var Effects = Class(function () {
 
       // call the animation function with normalized opts
       opts = _applyDefaultOpts(name, opts);
-      fn(view, opts, anim);
+      fn.call(this, view, opts, anim);
 
       // remove the anim ref and loop the animation if specified
       anim.then(bind(this, function () {
@@ -216,7 +217,7 @@ var Effects = Class(function () {
       es.scale = opts.scale * vs.scale;
 
       // call the particle function with normalized opts
-      fn(view, opts, engine);
+      fn.call(this, view, opts, engine);
       if (engine._activeParticles.length) {
         view[name + 'Engine'] = engine;
         return engine;
@@ -256,7 +257,7 @@ var Effects = Class(function () {
       es.scale = opts.scale * vs.scale;
 
       // call the particle function with normalized opts
-      fn(view, opts, engine);
+      fn.call(this, view, opts, engine);
       if (engine._activeParticleObjects.length) {
         view[name + 'Engine'] = engine;
         return engine;
