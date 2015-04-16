@@ -91,10 +91,14 @@ var Effects = Class(function () {
 
   // wrapper for handling pause, resume, stop API
   var _applyState = function (view, name, state) {
+    view = (view && view.view) || view;
+
     if (!view) {
       // apply state to all animation effects globally
       this._animations.forEach(function (anim) {
+        anim.interrupting = true;
         anim[state]();
+        anim.interrupting = false;
       }, this);
       // apply state to all particle effects globally
       this._particleEngines.forEachActiveView(function (engine) {
@@ -108,7 +112,9 @@ var Effects = Class(function () {
       // apply state to all animation effects for a specific view
       this._animations.forEach(function (anim) {
         if (anim.subject === view) {
+          anim.interrupting = true;
           anim[state]();
+          anim.interrupting = false;
         }
       }, this);
       // apply state to all particle effects for a specific view
@@ -127,7 +133,9 @@ var Effects = Class(function () {
       // apply state to all animation effects for a specific view and specific effect name
       this._animations.forEach(function (anim) {
         if (anim.subject === view && anim._group === name) {
+          anim.interrupting = true;
           anim[state]();
+          anim.interrupting = false;
         }
       }, this);
       // apply state to all particle effects for a specific view and specific effect name
@@ -160,6 +168,11 @@ var Effects = Class(function () {
   // stop all, a group, or a single effect
   this.stop = function (view, name) {
     _applyState.call(this, view, name, 'stop');
+  };
+
+  // commit all, a group, or a single effect
+  this.commit = function (view, name) {
+    _applyState.call(this, view, name, 'commit');
   };
 
   // register a new animation effect
@@ -347,6 +360,12 @@ var EffectsParticleEngine = Class(ParticleEngine, function() {
     }
   };
 
+  this.commit = function () {
+    this.anim.commit();
+    this.animLoop.clear();
+    this.stop();
+  };
+
   this.update = function (dt) {
     !this.paused && this.runTick(dt);
 
@@ -410,6 +429,12 @@ var EffectsBlendEngine = Class(BlendEngine, function() {
       this.subject = null;
       this._group = "";
     }
+  };
+
+  this.commit = function () {
+    this.anim.commit();
+    this.animLoop.clear();
+    this.stop();
   };
 
   this.update = function (dt) {
