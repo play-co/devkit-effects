@@ -166,7 +166,7 @@ var Effects = Class(function () {
   };
 
   // stop all, a group, or a single effect
-  this.stop = function (view, name) {
+  this.clear = this.stop = function (view, name) {
     _applyState.call(this, view, name, 'stop');
   };
 
@@ -361,9 +361,12 @@ var EffectsParticleEngine = Class(ParticleEngine, function() {
   };
 
   this.commit = function () {
-    this.anim.commit();
-    this.animLoop.clear();
-    this.stop();
+    // only commit effects that follow their subject, since explosions linger
+    if (this.follow) {
+      this.anim.commit();
+      this.animLoop.clear();
+      this.stop();
+    }
   };
 
   this.update = function (dt) {
@@ -432,9 +435,12 @@ var EffectsBlendEngine = Class(BlendEngine, function() {
   };
 
   this.commit = function () {
-    this.anim.commit();
-    this.animLoop.clear();
-    this.stop();
+    // only commit effects that follow their subject, since explosions linger
+    if (this.follow) {
+      this.anim.commit();
+      this.animLoop.clear();
+      this.stop();
+    }
   };
 
   this.update = function (dt) {
