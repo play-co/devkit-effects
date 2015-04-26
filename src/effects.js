@@ -6,15 +6,20 @@ import ui.BlendEngine as BlendEngine;
 import .defaultImages;
 import .effectsLibrary;
 
+import .EffectsParticleEngine;
+import .EffectsBlendEngine;
 
 var Effects = Class(function () {
 
+/////////////////////////
 // ~ ~ Private API ~ ~ //
+/////////////////////////
 
   /**
-    * Effects Manager Class
-    * ~ individual effects are added automatically from effectsLibrary
-    * ~ effects can also be added manually via register functions
+    * <p>Effects Manager Class
+    * ~ individual effects are added automatically from {@link effectsLibrary}
+    * ~ effects can also be added manually via register functions</p>
+    * <p>Although this is possible to register custom effects, particles, etc., it's recommended to avoid until better tested and documented! Read the code in if you're super curious!</p>
     * @class Effects
     */
   this.init = function () {
@@ -52,7 +57,11 @@ var Effects = Class(function () {
   var followDefaults = effectsLibrary.getDefaults('follow');
   var behindDefaults = effectsLibrary.getDefaults('behind');
 
-  // updates particle and blend engines and removes finished engines
+  /**
+    * updates particle and blend engines and removes finished engines
+    * @func Effects#_tick
+    * @arg {number} dt
+    */
   var _tick = function (dt) {
     // update particle engines
     this._particleEngines.forEachActiveView(function (engine) {
@@ -75,7 +84,23 @@ var Effects = Class(function () {
     }, this);
   };
 
-  // normalizes opts passed in to effects with reasonable defaults
+  /**
+   * @typedef {Object} EffectsOpts
+   * @property {number} delay - in milliseconds
+   * @property {number} duration - in milliseconds, change the time an effect takes to complete, defaults to 1000 for most effects
+   * @property {number} scale - change the general scale or magnitude of an effect, defaults to 1 for most effects
+   * @property {boolean} loop - whether or not to continually repeat an effect, defaults to false for most effects
+   * @property {boolean} blend - whether or not to blend an effect using composite operations, defaults to false for most effects, only affects particles
+   * @property {boolean} follow - whether particles should follow a view as it moves, defaults to false for most effects, only affects particles
+   * @property {boolean} behind - whether particles should be in front or behind the view, defaults to false for most effects, only affects particles
+   */
+  /**
+   * normalizes opts passed in to effects with reasonable defaults. For a description of the defualt opts see {@link EffectsOpts}
+   * @func Effects#_applyDefaultOpts
+   * @param  name
+   * @param  {Object} opts
+   * @return {EffectsOpts} opts
+   */
   var _applyDefaultOpts = function (name, opts) {
     opts = opts || {};
     opts.delay = opts.delay || 0;
@@ -88,7 +113,13 @@ var Effects = Class(function () {
     return opts;
   };
 
-  // wrapper for handling pause, resume, stop API
+  /**
+   * wrapper for handling pause, resume, stop API
+   * @func Effects#_applyState
+   * @param  {View|Object} view - If an object is given, object.view will be used.
+   * @param  {String} name
+   * @param  {String} state
+   */
   var _applyState = function (view, name, state) {
     view = (view && view.view) || view;
 
@@ -152,29 +183,67 @@ var Effects = Class(function () {
     }
   };
 
+////////////////////////
 // ~ ~ Public API ~ ~ //
+////////////////////////
 
-  // pause all, a group, or a single effect
+  /**
+   * pauses all effects globally, all effects on a given view, or a specific effect on a specific view
+   * @function Effects#pause
+   * @param  {View}   [view]
+   * @param  {String} [name]
+   */
   this.pause = function (view, name) {
     _applyState.call(this, view, name, 'pause');
   };
 
-  // resume all, a group, or a single effect
+  /**
+   * resumes all effects globally, all effects on a given view, or a specific effect on a specific view
+   * @method Effects#resume
+   * @param  {View}   [view]
+   * @param  {String} [name]
+   */
   this.resume = function (view, name) {
     _applyState.call(this, view, name, 'resume');
   };
 
-  // stop all, a group, or a single effect
+  /**
+   * clears all effects globally, all effects on a given view, or a specific effect on a specific view
+   * @method Effects#clear
+   * @param  {View}   [view]
+   * @param  {String} [name]
+   */
+  /**
+   * @method Effects#stop
+   * @alias Effects#clear
+   */
   this.clear = this.stop = function (view, name) {
     _applyState.call(this, view, name, 'stop');
   };
 
-  // commit all, a group, or a single effect
+  /**
+   * instantly and safely finishes all effects globally, all effects on a given view, or a specific effect on a specific view
+   * @method Effects#commit
+   * @param  {View}   [view]
+   * @param  {String} [name]
+   */
   this.commit = function (view, name) {
     _applyState.call(this, view, name, 'commit');
   };
 
-  // register a new animation effect
+  /**
+   * @callback AnimationEffectCallback
+   * @param {View}   view
+   * @param {EffectsOpts} opts
+   * @param {animation}   anim
+   */
+  /**
+   * uses timestep's {@link animate} to create animation effects, like bounces or shakes
+   * @method Effects#registerAnimationEffect
+   * @param  {String} name
+   * @param  {AnimationEffectCallback} fn
+   * @return {animate}
+   */
   this.registerAnimationEffect = function (name, fn) {
     this[name] = bind(this, function (view, opts) {
       // allow entities and other objects that have views
@@ -205,7 +274,19 @@ var Effects = Class(function () {
     });
   };
 
-  // register a new particle effect
+  /**
+   * @callback ParticleEffectCallback
+   * @param {View}   view
+   * @param {EffectsOpts} opts
+   * @param {EffectsParticleEngine} engine
+   */
+  /**
+   * uses timestep's {@link ParticleEngine} to create particle effects, like sparkles or explosions
+   * @method Effects#registerParticleEffect
+   * @param  {String} name
+   * @param  {ParticleEffectCallback} fn
+   * @return {ParticleEngine|null}
+   */
   this.registerParticleEffect = function (name, fn) {
     this[name] = bind(this, function (view, opts) {
       // allow entities and other objects that have views
@@ -257,7 +338,19 @@ var Effects = Class(function () {
     });
   };
 
-  // register a new composite (blending) effect
+  /**
+   * @callback CompositeEffectCallback
+   * @param {View}   view
+   * @param {EffectsOpts} opts
+   * @param {EffectsBlendEngine} engine
+   */
+  /**
+   * uses timestep's {@link BlendEngine} to create composited particle effects, like disco-mode
+   * @method Effects#registerCompositeEffect
+   * @param  {String}   name
+   * @param  {CompositeEffectCallback} fn
+   * @return {BlendEngine|null}
+   */
   this.registerCompositeEffect = function (name, fn) {
     this[name] = bind(this, function (view, opts) {
       // allow entities and other objects that have views
@@ -312,153 +405,6 @@ var Effects = Class(function () {
   };
 
 });
-
-
-
-/**
-  *  EffectsParticleEngine
-  *  ~ wraps ParticleEngine to mimic animate's Animator API
-  */
-
-var EffectsParticleEngine = Class(ParticleEngine, function() {
-  var supr = ParticleEngine.prototype;
-
-  this.init = function (opts) {
-    supr.init.call(this, opts);
-    this.anim = animate(this);
-    this.animLoop = animate(this, 'loop');
-    this.paused = false;
-    this.follow = false;
-    this.subject = null;
-    this._group = "";
-  };
-
-  this.pause = function () {
-    this.anim.pause();
-    this.animLoop.pause();
-    this.paused = true;
-  };
-
-  this.resume = function () {
-    this.anim.resume();
-    this.animLoop.resume();
-    this.paused = false;
-  };
-
-  this.stop = this.clear = function () {
-    if (this.subject) {
-      this.anim.clear();
-      this.animLoop.clear();
-      this.killAllParticles();
-      this.paused = false;
-      this.follow = false;
-      this.removeFromSuperview();
-      this.subject[this._group + 'Engine'] = null;
-      this.subject = null;
-      this._group = "";
-    }
-  };
-
-  this.commit = function () {
-    // only commit effects that follow their subject, since explosions linger
-    if (this.follow) {
-      this.anim.commit();
-      this.animLoop.clear();
-      this.stop();
-    }
-  };
-
-  this.update = function (dt) {
-    !this.paused && this.runTick(dt);
-
-    if (this.follow) {
-      this.style.x = this.subject.style.x;
-      this.style.y = this.subject.style.y;
-      this.style.visible = this.subject.style.visible;
-
-      var parent = this.subject.getSuperview();
-      if (this.getSuperview() !== parent) {
-        parent.addSubview(this);
-      }
-    }
-  };
-
-});
-
-
-
-/**
-  *  EffectsBlendEngine
-  *  ~ wraps BlendEngine to mimic animate's Animator API
-  */
-
-var EffectsBlendEngine = Class(BlendEngine, function() {
-  var supr = BlendEngine.prototype;
-
-  this.init = function (opts) {
-    supr.init.call(this, opts);
-    this.anim = animate(this);
-    this.animLoop = animate(this, 'loop');
-    this.paused = false;
-    this.follow = false;
-    this.subject = null;
-    this._group = "";
-  };
-
-  this.pause = function () {
-    this.anim.pause();
-    this.animLoop.pause();
-    this.paused = true;
-  };
-
-  this.resume = function () {
-    this.anim.resume();
-    this.animLoop.resume();
-    this.paused = false;
-  };
-
-  this.stop = this.clear = function () {
-    if (this.subject) {
-      this.anim.clear();
-      this.animLoop.clear();
-      this.killAllParticles();
-      this.paused = false;
-      this.follow = false;
-      this.style.opacity = 1;
-      this.style.compositeOperation = "";
-      this.removeFromSuperview();
-      this.subject[this._group + 'Engine'] = null;
-      this.subject = null;
-      this._group = "";
-    }
-  };
-
-  this.commit = function () {
-    // only commit effects that follow their subject, since explosions linger
-    if (this.follow) {
-      this.anim.commit();
-      this.animLoop.clear();
-      this.stop();
-    }
-  };
-
-  this.update = function (dt) {
-    !this.paused && this.runTick(dt);
-
-    if (this.follow) {
-      this.style.x = this.subject.style.x;
-      this.style.y = this.subject.style.y;
-      this.style.visible = this.subject.style.visible;
-
-      var parent = this.subject.getSuperview();
-      if (this.getSuperview() !== parent) {
-        parent.addSubview(this);
-      }
-    }
-  };
-
-});
-
 
 // this class is a singleton instantiated on import
 exports = new Effects();

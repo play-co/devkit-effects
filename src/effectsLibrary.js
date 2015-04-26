@@ -41,11 +41,24 @@ var DEFAULT_OPTS = {
   }
 };
 
+/**
+ * Some classy default effects to jazz up your game
+ * @namespace effectsLibrary
+ */
 exports = {
 
-/* ~ ~ Animation Effects ~ ~ */
+///////////////////////////////
+// ~ ~ Animation Effects ~ ~ //
+///////////////////////////////
 
+  /** @var {Object} effectsLibrary.animationEffects */
   animationEffects: {
+    /**
+     * hover a view up and down
+     * @memberof effectsLibrary
+     * @method animationEffects.hover
+     * @type {AnimationEffectCallback}
+     */
     hover: function (view, opts, anim) {
       var ttl = opts.duration;
       var dt = ttl / 4;
@@ -57,6 +70,12 @@ exports = {
         .then({ y: vs.y + dy }, dt, animate.easeOut)
         .then({ y: vs.y }, dt, animate.easeIn);
     },
+    /**
+     * shake a view rapidly, great for screen shaking like earthquakes
+     * @memberof effectsLibrary
+     * @method animationEffects.shake
+     * @type {AnimationEffectCallback}
+     */
     shake: function (view, opts, anim) {
       var ttl = opts.duration;
       var dt = ttl / 16;
@@ -101,6 +120,12 @@ exports = {
         .then({ x: x + 1 * m * cos(r14), y: y + 1 * m * sin(r14), scale: s * (1 + 0.002 * m) }, dt, animate.easeInOut)
         .then({ x: x, y: y, anchorX: ax, anchorY: ay, scale: s }, dt, animate.easeIn);
     },
+    /**
+     * rotate a view
+     * @memberof effectsLibrary
+     * @method animationEffects.spin
+     * @type {AnimationEffectCallback}
+     */
     spin: function (view, opts, anim) {
       var ttl = opts.duration;
       var vs = view.style;
@@ -108,6 +133,12 @@ exports = {
 
       anim.then({ r: vs.r + dr }, ttl, animate.linear);
     },
+    /**
+     * make a view squish like jelly
+     * @memberof effectsLibrary
+     * @method animationEffects.squish
+     * @type {AnimationEffectCallback}
+     */
     squish: function (view, opts, anim) {
       var ttl = opts.duration;
       var dt = ttl / 4;
@@ -120,6 +151,12 @@ exports = {
         .then({ scaleX: vs.scaleX + dsx, scaleY: vs.scaleY - dsy }, dt, animate.easeOut)
         .then({ scaleX: vs.scaleX, scaleY: vs.scaleY }, dt, animate.easeIn);
     },
+    /**
+     * sway a view back and forth
+     * @memberof effectsLibrary
+     * @method animationEffects.sway
+     * @type {AnimationEffectCallback}
+     */
     sway: function (view, opts, anim) {
       var ttl = opts.duration;
       var dt = ttl / 4;
@@ -133,9 +170,18 @@ exports = {
     }
   },
 
-/* ~ ~ Particle Effects ~ ~ */
+//////////////////////////////
+// ~ ~ Particle Effects ~ ~ //
+//////////////////////////////
 
+  /** @var {Object} effectsLibrary.particleEffects */
   particleEffects: {
+    /**
+     * basic fiery explosion, default images
+     * @memberof effectsLibrary
+     * @method particleEffects.explode
+     * @type {ParticleEffectCallback}
+     */
     explode: function (view, opts, engine) {
       var count = 16;
       var data = engine.obtainParticleArray(count);
@@ -169,6 +215,12 @@ exports = {
       }
       engine.emitParticles(data);
     },
+    /**
+     * basic sparkly effect, default images
+     * @memberof effectsLibrary
+     * @method particleEffects.sparkle
+     * @type {ParticleEffectCallback}
+     */
     sparkle: function (view, opts, engine) {
       // unique effect per view
       if (view.sparkleEngine) { return; }
@@ -206,9 +258,18 @@ exports = {
     }
   },
 
-/* ~ ~ Composite Effects ~ ~ */
+///////////////////////////////
+// ~ ~ Composite Effects ~ ~ //
+///////////////////////////////
 
+  /** @var {Object} effectsLibrary.compositeEffects */
   compositeEffects: {
+    /**
+     * disco-mode, default images
+     * @memberof effectsLibrary
+     * @method compositeEffects.disco
+     * @type {CompositeEffectCallback}
+     */
     disco: function (view, opts, engine) {
       // unique effect per view
       if (view.discoEngine) { return; }
@@ -325,6 +386,12 @@ exports = {
 
       engine.emitParticles(data);
     },
+    /**
+     * awe-inspiring radials, default images
+     * @memberof effectsLibrary
+     * @method compositeEffects.radial
+     * @type {CompositeEffectCallback}
+     */
     radial: function (view, opts, engine) {
       // unique effect per view
       if (view.radialEngine) { return; }
@@ -353,7 +420,9 @@ exports = {
     }
   },
 
+//////////////////////////////
 /* ~ ~ Helper Functions ~ ~ */
+//////////////////////////////
 
   getDefaults: function (optName) {
     return DEFAULT_OPTS[optName];
