@@ -7,17 +7,16 @@ import .defaultImages;
 import .effectsLibrary;
 
 
-
-/**
-  *  Effects Manager Class
-  *  ~ individual effects are added automatically from effectsLibrary
-  *  ~ effects can also be added manually via register functions
-  */
-
 var Effects = Class(function () {
 
-/* ~ ~ Private API ~ ~ */
+// ~ ~ Private API ~ ~ //
 
+  /**
+    * Effects Manager Class
+    * ~ individual effects are added automatically from effectsLibrary
+    * ~ effects can also be added manually via register functions
+    * @class Effects
+    */
   this.init = function () {
     this._animations = [];
     this._particleEngines = new ViewPool({ ctor: EffectsParticleEngine });
@@ -153,7 +152,7 @@ var Effects = Class(function () {
     }
   };
 
-/* ~ ~ Public API ~ ~ */
+// ~ ~ Public API ~ ~ //
 
   // pause all, a group, or a single effect
   this.pause = function (view, name) {
@@ -459,7 +458,6 @@ var EffectsBlendEngine = Class(BlendEngine, function() {
   };
 
 });
-
 
 
 // this class is a singleton instantiated on import

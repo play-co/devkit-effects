@@ -1,0 +1,9 @@
+{
+  "source": {
+    "include": ["src"]
+  },
+  "templates": {
+    "applicationName": "Devkit Effects",
+    "linenums": true
+  }
+}
