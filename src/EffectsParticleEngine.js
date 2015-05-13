@@ -87,9 +87,14 @@ exports = Class(ParticleEngine, function() {
     !this.paused && this.runTick(dt);
 
     if (this.follow) {
-      this.style.x = this.subject.style.x;
-      this.style.y = this.subject.style.y;
-      this.style.visible = this.subject.style.visible;
+      var es = this.style;
+      var ss = this.subject.style;
+
+      es.x = ss.x;
+      es.y = ss.y;
+      es.offsetX = ss.offsetX;
+      es.offsetY = ss.offsetY;
+      es.visible = ss.visible;
 
       var parent = this.subject.getSuperview();
       if (this.getSuperview() !== parent) {
