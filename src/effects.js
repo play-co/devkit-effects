@@ -68,7 +68,7 @@ var Effects = Class(function () {
       if (engine._activeParticles.length) {
         engine.update(dt);
       } else {
-        engine.stop();
+        engine.stop(true);
         this._particleEngines.releaseView(engine);
       }
     }, this);
@@ -78,7 +78,7 @@ var Effects = Class(function () {
       if (engine._activeParticleObjects.length) {
         engine.update(dt);
       } else {
-        engine.stop();
+        engine.stop(true);
         this._blendEngines.releaseView(engine);
       }
     }, this);
