@@ -52,10 +52,12 @@ exports = Class(BlendEngine, function() {
    * @method EffectsBlendEngine#stop
    * @alias EffectsBlendEngine#clear
    */
-  this.stop = this.clear = function () {
-    if (this.subject) {
+  this.stop = this.clear = function (force) {
+    // always stop loops
+    this.animLoop.clear();
+
+    if (this.subject && (this.follow || force)) {
       this.anim.clear();
-      this.animLoop.clear();
       this.killAllParticles();
       this.paused = false;
       this.follow = false;
@@ -72,12 +74,14 @@ exports = Class(BlendEngine, function() {
    * commit animation and animation loop, then execute {@link EffectsBlendEngine#stop}
    * @method EffectsBlendEngine#commit
    */
-  this.commit = function () {
+  this.commit = function (force) {
+    // always stop loops
+    this.animLoop.clear();
+
     // only commit effects that follow their subject, since explosions linger
-    if (this.follow) {
+    if (this.follow || force) {
       this.anim.commit();
-      this.animLoop.clear();
-      this.stop();
+      this.stop(force);
     }
   };
 

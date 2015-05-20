@@ -195,8 +195,8 @@ exports = {
       for (var i = 0; i < count; i++) {
         var p = data[i];
         p.polar = true;
-        p.ox = x + rollFloat(-5, 5);
-        p.oy = y + rollFloat(-5, 5);
+        p.x = p.ox = x + rollFloat(-5, 5);
+        p.y = p.oy = y + rollFloat(-5, 5);
         p.radius = rollFloat(-5, 5);
         p.dradius = rollFloat(0, 400) * speed;
         p.ddradius = stop * p.dradius;

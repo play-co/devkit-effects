@@ -132,11 +132,11 @@ var Effects = Class(function () {
       }, this);
       // apply state to all particle effects globally
       this._particleEngines.forEachActiveView(function (engine) {
-        engine[state]();
+        engine[state](true);
       }, this);
       // apply state to all composite effects globally
       this._blendEngines.forEachActiveView(function (engine) {
-        engine[state]();
+        engine[state](true);
       }, this);
     } else if (!name) {
       // apply state to all animation effects for a specific view
@@ -150,13 +150,13 @@ var Effects = Class(function () {
       // apply state to all particle effects for a specific view
       this._particleEngines.forEachActiveView(function (engine) {
         if (engine.subject === view) {
-          engine[state]();
+          engine[state](false);
         }
       }, this);
       // apply state to all composite effects for a specific view
       this._blendEngines.forEachActiveView(function (engine) {
         if (engine.subject === view) {
-          engine[state]();
+          engine[state](false);
         }
       }, this);
     } else {
@@ -171,13 +171,13 @@ var Effects = Class(function () {
       // apply state to all particle effects for a specific view and specific effect name
       this._particleEngines.forEachActiveView(function (engine) {
         if (engine.subject === view && engine._group === name) {
-          engine[state]();
+          engine[state](false);
         }
       }, this);
       // apply state to all composite effects for a specific view and specific effect name
       this._blendEngines.forEachActiveView(function (engine) {
         if (engine.subject === view && engine._group === name) {
-          engine[state]();
+          engine[state](false);
         }
       }, this);
     }
