@@ -316,6 +316,8 @@ var Effects = Class(function () {
       es.anchorY = vs.anchorY;
       es.zIndex = opts.behind ? vs.zIndex - 1 : vs.zIndex + 1;
       es.scale = opts.scale * vs.scale;
+      es.flipX = vs.flipX;
+      es.flipY = vs.flipY;
 
       // call the particle function with normalized opts
       fn.call(this, view, opts, engine);
@@ -384,6 +386,8 @@ var Effects = Class(function () {
       es.anchorY = vs.anchorY;
       es.zIndex = opts.behind ? vs.zIndex - 1 : vs.zIndex + 1;
       es.scale = opts.scale * vs.scale;
+      es.flipX = vs.flipX;
+      es.flipY = vs.flipY;
 
       // call the particle function with normalized opts
       fn.call(this, view, opts, engine);

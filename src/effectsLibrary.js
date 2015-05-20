@@ -34,7 +34,8 @@ var DEFAULT_OPTS = {
   },
   follow: {
     'radial': true,
-    'sparkle': true
+    'sparkle': true,
+    'disco': true
   },
   behind: {
     'radial': true
