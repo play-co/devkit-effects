@@ -326,7 +326,7 @@ var Effects = Class(function () {
           engine.animLoop.wait(opts.duration)
             .then(bind(this, function () {
               if (view[name + 'Engine'] === engine) {
-                engine.stop();
+                engine.stop(true);
                 this._particleEngines.releaseView(engine);
                 this[name](view, opts);
               }
@@ -394,7 +394,7 @@ var Effects = Class(function () {
           engine.animLoop.wait(opts.duration)
             .then(bind(this, function () {
               if (view[name + 'Engine'] === engine) {
-                engine.stop();
+                engine.stop(true);
                 this._blendEngines.releaseView(engine);
                 this[name](view, opts);
               }
