@@ -1,9 +1,14 @@
 import animate;
+import ui.View as View;
+import ui.ImageView as ImageView;
+import ui.ViewPool as ViewPool;
 
 import .defaultImages;
 
+// math helper constants and functions
 var PI = Math.PI;
 var TAU = 2 * PI;
+var abs = Math.abs;
 var min = Math.min;
 var max = Math.max;
 var sin = Math.sin;
@@ -15,10 +20,12 @@ var choose = function (a) { return a[floor(random() * a.length)]; };
 var rollFloat = function (n, x) { return n + random() * (x - n); };
 var rollInt = function (n, x) { return floor(n + random() * (1 + x - n)); };
 
+// custom defaults per effect if different from primary effect defaults
 var DEFAULT_OPTS = {
   duration: {
     'disco': 2500,
-    'sparkle': 2000
+    'sparkle': 2000,
+    'confetti': 2500
   },
   loop: {
     'hover': true,
@@ -26,7 +33,8 @@ var DEFAULT_OPTS = {
     'squish': true,
     'sway': true,
     'disco': true,
-    'sparkle': true
+    'sparkle': true,
+    'confetti': true
   },
   blend: {
     'explode': true,
@@ -41,6 +49,10 @@ var DEFAULT_OPTS = {
     'radial': true
   }
 };
+
+// some effects need views for complex animations
+var _viewPool = new ViewPool({ ctor: View });
+var _imageViewPool = new ViewPool({ ctor: ImageView });
 
 /**
  * Some classy default effects to jazz up your game
@@ -225,7 +237,10 @@ exports = {
      */
     sparkle: function (view, opts, engine) {
       // unique effect per view
-      if (view.sparkleEngine) { return; }
+      // TODO: move to opts.unique, and handle stop(true) call automatically
+      if (view.sparkleEngine) {
+        view.sparkleEngine.stop(true);
+      }
 
       var vs = view.style;
       var count = rollInt(1, 2);
@@ -257,6 +272,99 @@ exports = {
         p.compositeOperation = opts.blend ? "lighter" : "";
       }
       engine.emitParticles(data);
+    },
+    /**
+     * confetti rain, default images
+     * @memberof effectsLibrary
+     * @method particleEffects.confetti
+     * @type {ParticleEffectCallback}
+     */
+    confetti: function (view, opts, engine) {
+      // unique effect per view
+      if (view.confettiEngine) {
+        view.confettiEngine.stop(true);
+      }
+
+      // this is a self-looping effect, and must be manually stopped
+      opts.loop = false;
+
+      var vs = view.style;
+      var ttl = opts.duration;
+      var last = Date.now();
+      var onTick = function () {
+        var now = Date.now();
+        var dt = now - last;
+        last = now;
+
+        // chance to add new confetti particle
+        if (!dt || random() < 0.25) {
+          var views = [];
+          var data = engine.obtainParticleArray(1);
+          var p = data[0];
+          var width = rollFloat(8, 20);
+          var height = rollFloat(8, 20);
+          var cView = _viewPool.obtainView({
+            superview: engine,
+            x: 0,
+            y: 0,
+            anchorX: width / 2,
+            anchorY: height / 2,
+            width: width,
+            height: height
+          });
+          cView._spin = rollFloat(0, TAU);
+          cView._spinMod = rollFloat(250, 750) * (random() < 0.5 ? 1 : -1);
+          cView._rotMod = rollFloat(250, 750) * (random() < 0.5 ? 1 : -1);
+          cView._imgView = _imageViewPool.obtainView({
+            superview: cView,
+            x: 0,
+            y: 0,
+            r: rollFloat(0, TAU),
+            anchorX: width / 2,
+            anchorY: height / 2,
+            width: width,
+            height: height,
+            image: choose(opts.images),
+            canHandleEvents: false
+          });
+
+          cView.style.x = p.x = (opts.follow ? 0 : vs.x - engine.style.x) + rollFloat(0, vs.width) - width / 2;
+          cView.style.y = p.y = (opts.follow ? 0 : vs.y - engine.style.y) + rollFloat(0, vs.height) - height / 2;
+          p.dy = 100;
+          p.ttl = ttl;
+          p.onDeath = function () {
+            cView._imgView.removeFromSuperview();
+            _imageViewPool.releaseView(cView._imgView)
+            delete cView._imgView;
+
+            cView.removeFromSuperview();
+            _viewPool.releaseView(cView);
+          };
+
+          engine.addExternalParticles([cView], data);
+        }
+
+        // update confettis each tick
+        engine.forEachActiveParticle(function (particle) {
+          var pData = particle.pData;
+          if (pData.elapsed >= 0.75 * ttl) {
+            particle.style.opacity = (ttl - pData.elapsed) / (0.25 * ttl);
+          }
+          particle._spin += dt / particle._spinMod;
+          particle.style.scaleY = abs(cos(particle._spin));
+          if (random() < 0.5) {
+            particle.style.r += dt / particle._rotMod;
+          } else {
+            particle._imgView.style.r += dt / particle._rotMod;
+          }
+        }, this);
+
+        // set up next tick
+        engine.animLoop.wait(16).then(onTick);
+      };
+
+      // start the loop
+      onTick();
     }
   },
 
@@ -274,7 +382,9 @@ exports = {
      */
     disco: function (view, opts, engine) {
       // unique effect per view
-      if (view.discoEngine) { return; }
+      if (view.discoEngine) {
+        view.discoEngine.stop(true);
+      }
 
       var vs = view.style;
       var ttl = opts.duration;
@@ -396,7 +506,9 @@ exports = {
      */
     radial: function (view, opts, engine) {
       // unique effect per view
-      if (view.radialEngine) { return; }
+      if (view.radialEngine) {
+        view.radialEngine.stop(true);
+      }
 
       var vs = view.style;
       var count = opts.images.length;
