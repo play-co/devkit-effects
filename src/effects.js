@@ -321,24 +321,20 @@ var Effects = Class(function () {
 
       // call the particle function with normalized opts
       fn.call(this, view, opts, engine);
-      if (engine._activeParticles.length) {
-        view[name + 'Engine'] = engine;
-        // particle engine loop, repeats the effect
-        if (opts.loop) {
-          engine.animLoop.wait(opts.duration)
-            .then(bind(this, function () {
-              if (view[name + 'Engine'] === engine) {
-                engine.stop(true);
-                this._particleEngines.releaseView(engine);
-                this[name](view, opts);
-              }
-            }));
-        }
-        return engine;
-      } else {
-        this._particleEngines.releaseView(engine);
-        return null;
+      view[name + 'Engine'] = engine;
+
+      // particle engine loop, repeats the effect
+      if (opts.loop) {
+        engine.animLoop.wait(opts.duration)
+          .then(bind(this, function () {
+            if (view[name + 'Engine'] === engine) {
+              engine.stop(true);
+              this._particleEngines.releaseView(engine);
+              this[name](view, opts);
+            }
+          }));
       }
+      return engine;
     });
   };
 
@@ -391,24 +387,20 @@ var Effects = Class(function () {
 
       // call the particle function with normalized opts
       fn.call(this, view, opts, engine);
-      if (engine._activeParticleObjects.length) {
-        view[name + 'Engine'] = engine;
-        // blend engine loop, repeats the effect
-        if (opts.loop) {
-          engine.animLoop.wait(opts.duration)
-            .then(bind(this, function () {
-              if (view[name + 'Engine'] === engine) {
-                engine.stop(true);
-                this._blendEngines.releaseView(engine);
-                this[name](view, opts);
-              }
-            }));
-        }
-        return engine;
-      } else {
-        this._blendEngines.releaseView(engine);
-        return null;
+      view[name + 'Engine'] = engine;
+
+      // blend engine loop, repeats the effect
+      if (opts.loop) {
+        engine.animLoop.wait(opts.duration)
+          .then(bind(this, function () {
+            if (view[name + 'Engine'] === engine) {
+              engine.stop(true);
+              this._blendEngines.releaseView(engine);
+              this[name](view, opts);
+            }
+          }));
       }
+      return engine;
     });
   };
 
