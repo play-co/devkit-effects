@@ -51,7 +51,7 @@ These properties can be passed in to modify effects:
  * `scale` - number - change the general scale or magnitude of an effect, defaults to 1 for most effects
  * `loop` - boolean - whether or not to continually repeat an effect, defaults to false for most effects
  * `blend` - boolean - whether or not to blend an effect using composite operations, defaults to false for most effects, only affects particles
- * `follow` - boolean - whether particles should follow a view as it moves, defaults to false for most effects, only affects particles
+ * `follow` - boolean - whether particles should follow a view as it moves, defaults to false for most effects, only affects particles, `follow: false` can create particle trails, try it with the `confetti` effect!
  * `behind` - boolean - whether particles should be in front or behind the view, defaults to false for most effects, only affects particles
 
 ### Master Effects List
@@ -64,6 +64,7 @@ These properties can be passed in to modify effects:
  * `sway` - sway a view back and forth
 
 #### Particle Effects
+ * `confetti` - basic confetti effect, default images
  * `explode` - basic fiery explosion, default images
  * `sparkle` - basic sparkly effect, default images
 
