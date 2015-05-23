@@ -311,7 +311,11 @@ exports = {
             anchorX: width / 2,
             anchorY: height / 2,
             width: width,
-            height: height
+            height: height,
+            opacity: 1,
+            scale: 1,
+            scaleX: 1,
+            scaleY: 1
           });
           cView._spin = rollFloat(0, TAU);
           cView._spinMod = rollFloat(250, 750) * (random() < 0.5 ? 1 : -1);
@@ -325,10 +329,14 @@ exports = {
             anchorY: height / 2,
             width: width,
             height: height,
-            image: choose(opts.images),
-            canHandleEvents: false
+            opacity: 1,
+            scale: 1,
+            scaleX: 1,
+            scaleY: 1
           });
+          cView._imgView.setImage(choose(opts.images));
 
+          // particle props
           cView.style.x = p.x = (opts.follow ? 0 : vs.x - engine.style.x) + rollFloat(0, vs.width) - width / 2;
           cView.style.y = p.y = (opts.follow ? 0 : vs.y - engine.style.y) + rollFloat(0, vs.height) - height / 2;
           p.dy = 100;
@@ -337,7 +345,6 @@ exports = {
             cView._imgView.removeFromSuperview();
             _imageViewPool.releaseView(cView._imgView)
             delete cView._imgView;
-
             cView.removeFromSuperview();
             _viewPool.releaseView(cView);
           };
