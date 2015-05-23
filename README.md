@@ -64,13 +64,14 @@ These properties can be passed in to modify effects:
  * `sway` - sway a view back and forth
 
 #### Particle Effects
- * `confetti` - basic confetti effect, default images
- * `explode` - basic fiery explosion, default images
- * `sparkle` - basic sparkly effect, default images
+ * `confetti` - basic confetti effect, has default images
+ * `explode` - basic fiery explosion, has default images
+ * `firework` - an explosion that looks like a firework, has default images
+ * `sparkle` - basic sparkly effect, has default images
 
 #### Composite Effects
- * `disco` - disco-mode, default images
- * `radial` - awe-inspiring radials, default images
+ * `disco` - disco-mode, has default images
+ * `radial` - awe-inspiring radials, has default images
 
 ### Registering Custom Effects
 
