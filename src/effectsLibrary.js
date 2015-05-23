@@ -25,7 +25,8 @@ var DEFAULT_OPTS = {
   duration: {
     'disco': 2500,
     'sparkle': 2000,
-    'confetti': 2500
+    'confetti': 2500,
+    'firework': 750
   },
   loop: {
     'hover': true,
@@ -198,7 +199,7 @@ exports = {
     explode: function (view, opts, engine) {
       var count = 16;
       var data = engine.obtainParticleArray(count);
-      var size = 50;
+      var size = 50 * opts.scale;
       var ttl = opts.duration;
       var stop = -1000 / ttl;
       var vs = view.style;
@@ -293,7 +294,7 @@ exports = {
       var last = Date.now();
       var onTick = function () {
         var now = Date.now();
-        var dt = now - last;
+        var dt = min(now - last, 100);
         last = now;
 
         // chance to add new confetti particle
@@ -365,6 +366,68 @@ exports = {
 
       // start the loop
       onTick();
+    },
+    /**
+     * a single firework explosion, default images
+     * @memberof effectsLibrary
+     * @method particleEffects.firework
+     * @type {ParticleEffectCallback}
+     */
+    firework: function (view, opts, engine) {
+      var vs = view.style;
+      var count = 32;
+      var ring = 14;
+      var data = engine.obtainParticleArray(count);
+      var ttl = opts.duration;
+      var stop = -1000 / ttl;
+      var size = 40 * opts.scale;
+      var growth = 350 * opts.scale;
+      var fall = rollFloat(150, 300);
+      var img = choose(opts.images);
+      for (var i = 0; i < count; i++) {
+        var p = data[i];
+        if (i < count - 1) {
+          p.image = img;
+          p.polar = true;
+          p.x = p.ox = (vs.width - size) / 2;
+          p.y = p.oy = (vs.height - size) / 2 - 10;
+          p.dr = rollFloat(-30, 30);
+          p.ddy = fall;
+          p.theta = i < ring ? TAU * (i + 1) / ring : rollFloat(0, TAU);
+          p.radius = 0;
+          p.dradius = i < ring ? growth : rollFloat(0.1, 1) * growth;
+          p.ddradius = stop * p.dradius;
+          p.anchorX = size / 2;
+          p.anchorY = size / 2;
+          p.width = size;
+          p.height = size;
+          p.scale = 0.75;
+          p.dscale = 1 - p.dradius / growth;
+          p.ddscale = 2.5 * stop;
+          p.ttl = ttl;
+          p.compositeOperation = opts.blend ? "lighter" : "";
+        } else {
+          p.image = img;
+          p.polar = true;
+          p.x = p.ox = (vs.width - size) / 2;
+          p.y = p.oy = (vs.height - size) / 2 - 10;
+          p.r = rollFloat(0, TAU);
+          p.ddy = fall;
+          p.theta = 0;
+          p.radius = 0;
+          p.anchorX = size / 2;
+          p.anchorY = size / 2;
+          p.width = size;
+          p.height = size;
+          p.dscale = 25;
+          p.ddscale = 2.3 * stop * p.dscale;
+          p.opacity = 0.75;
+          p.dopacity = 1.25 * stop;
+          p.ttl = ttl / 2;
+          p.compositeOperation = "lighter";
+        }
+      }
+      engine.emitParticles(data);
     }
   },
 
