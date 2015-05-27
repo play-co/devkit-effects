@@ -1,7 +1,7 @@
 import ui.resource.loader as loader;
 var _imageMap = loader.getMap();
 
-var DEFAULT_PATH = "plugins/devkit-effects/images/";
+var DEFAULT_PATH = "modules/devkit-effects/images/";
 var PROJECT_PATH = "resources/images/";
 
 var DefaultImages = Class(function () {
