@@ -529,7 +529,7 @@ exports = {
           light.x = col * (vs.width / cols) - size / 2;
           light.y = 2 * row * (vs.height / rows) - col * (vs.height / cols) - size / 2;
         } else {
-          var newRow = row - ~~(rows / 2);
+          var newRow = row - floor(rows / 2);
           light.x = (2 * newRow - 1) * (vs.width / rows) + col * (vs.width / cols) - size / 2;
           light.y = vs.height - col * (vs.height / cols) - size / 2;
         }
