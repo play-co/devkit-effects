@@ -286,19 +286,21 @@ exports = {
         view.confettiEngine.stop(true);
       }
 
-      // this is a self-looping effect, and must be manually stopped
+      // this is a self-looping effect, and must be stopped manually or by duration
       opts.loop = false;
 
       var vs = view.style;
       var ttl = opts.duration;
       var last = Date.now();
+      var elapsed = 0;
       var onTick = function () {
         var now = Date.now();
         var dt = min(now - last, 100);
+        elapsed += dt;
         last = now;
 
         // chance to add new confetti particle
-        if (!dt || random() < 0.25) {
+        if ((!dt || random() < 0.25) && elapsed <= ttl) {
           var views = [];
           var data = engine.obtainParticleArray(1);
           var p = data[0];
