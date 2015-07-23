@@ -290,7 +290,7 @@ exports = {
       opts.loop = false;
 
       var vs = view.style;
-      var ttl = opts.duration;
+      var ttl = opts.duration / 2;
       var last = Date.now();
       var elapsed = 0;
       var onTick = function () {
